@@ -373,7 +373,7 @@ public class CreateNeuron {
 
         try  {
 //            # Step 1: Update output layer
-            String cypherQuery = """
+            tx.execute("""
                     MATCH (output:Neuron {type: 'output'})<-[r:CONNECTED_TO]-(prev:Neuron)
             MATCH (output)-[outputsValues_R:CONTAINS]->(row_for_outputs:Row {type: 'outputsRow'})
             WITH DISTINCT output,r,prev,outputsValues_R,row_for_outputs,
@@ -394,11 +394,13 @@ public class CreateNeuron {
             SET output.bias = output.bias - $learning_rate * (output.m_bias / (1 - ($beta1 ^ t))) /
                     (SQRT(output.v_bias / (1 - ($beta2 ^ t))) + $epsilon)
             SET output.gradient = gradient
-                """.replace("$beta1", String.valueOf(beta1))
-                    .replace("$beta2", String.valueOf(beta2))
-                    .replace("$epsilon", String.valueOf(epsilon))
-                    .replace("$t", String.valueOf(t));
-            tx.execute(cypherQuery);
+                """, Map.of(
+                    "learning_rate", learning_rate,
+                    "beta1", beta1,
+                    "beta2", beta2,
+                    "epsilon", epsilon,
+                    "t", t
+            ));
             tx.commit();
         } catch (Exception e) {
             log.error("Error forward pass : ", e);
@@ -407,7 +409,7 @@ public class CreateNeuron {
 
 //        # Step 2: Update hidden layers
         try {
-            String cypherQuery = """
+            tx.execute("""
                     MATCH (n:Neuron {type: 'hidden'})<-[:CONNECTED_TO]-(next:Neuron)
                            WITH n, next, $t AS t
                        MATCH (n)-[r:CONNECTED_TO]->(next)
@@ -429,11 +431,13 @@ public class CreateNeuron {
                        SET n.bias = n.bias - $learning_rate * (n.m_bias / (1 - ($beta1 ^ t))) /\s
                                     (SQRT(n.v_bias / (1 - ($beta2 ^ t))) + $epsilon)
                        SET n.gradient = gradient
-                    """.replace("$beta1", String.valueOf(beta1))
-                    .replace("$beta2", String.valueOf(beta2))
-                    .replace("$epsilon", String.valueOf(epsilon))
-                    .replace("$t", String.valueOf(t));
-            tx.execute(cypherQuery);
+                    """, Map.of(
+                    "learning_rate", learning_rate,
+                    "beta1", beta1,
+                    "beta2", beta2,
+                    "epsilon", epsilon,
+                    "t", t
+            ));
             tx.commit();
         } catch (Exception e) {
             log.error("Error forward pass : ", e);
