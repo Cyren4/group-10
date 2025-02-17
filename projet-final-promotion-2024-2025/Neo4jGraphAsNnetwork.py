@@ -340,6 +340,10 @@ class NeuralNetworkManager:
     @staticmethod
     def initialize_adam_parameters(tx):
         tx.run("""
+               call nn.initialize_adam_parameters()
+               """)
+        '''
+        tx.run("""
                 MATCH ()-[r:CONNECTED_TO]->()
                 SET r.m = 0.0, r.v = 0.0
             """)
@@ -347,9 +351,14 @@ class NeuralNetworkManager:
                 MATCH (n:Neuron)
                 SET n.m_bias = 0.0, n.v_bias = 0.0
             """)
+        '''
 
     @staticmethod
     def constrain_weights(tx):
+        tx.run("""
+               call nn.constrain_weights()
+               """)
+        '''
         tx.run("""
                 MATCH ()-[r:CONNECTED_TO]->()
                 SET r.weight = CASE 
@@ -358,6 +367,7 @@ class NeuralNetworkManager:
                     ELSE r.weight 
                 END
             """)
+        '''
 
     @staticmethod
     def evaluate_model(tx):
