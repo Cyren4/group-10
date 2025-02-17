@@ -29,6 +29,7 @@ public class InitAdamParameters {
             tx.commit();
         } catch (Exception e) {
             log.error("Error initialize_adam_parameters: ", e);
+            throw e;
         }
     }
 }

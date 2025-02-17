@@ -7,25 +7,21 @@ import org.neo4j.procedure.*;
 import java.util.*;
 import java.util.stream.Stream;
 
-public class ConstrainWeights {
+public class Evaluate {
 
     @Context
     public Log log;
     @Context
     public GraphDatabaseService db;
 
-    @Procedure(name = "nn.constrain_weights",mode = Mode.WRITE)
+    @Procedure(name = "nn.evaluate",mode = Mode.WRITE)
     @Description("")
-    public void constrain_weights() {
+    public void evaluate() {
         Transaction tx = db.beginTx();
         try {
             tx.execute("""
-                MATCH ()-[r:CONNECTED_TO]->()
-                SET r.weight = CASE 
-                    WHEN r.weight > 1.0 THEN 1.0 
-                    WHEN r.weight < -1.0 THEN -1.0 
-                    ELSE r.weight 
-                END
+                MATCH (n:Neuron {type: 'output'})
+                RETURN n.id AS id, n.expected_output AS expected
             """);
             tx.commit();
         } catch (Exception e) {

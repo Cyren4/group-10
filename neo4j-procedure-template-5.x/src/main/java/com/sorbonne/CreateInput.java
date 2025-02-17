@@ -30,6 +30,7 @@ public class CreateInput {
         } catch (Exception e) {
             log.error("Error creating input row node: ", e);
             return Stream.of(new CreateNeuron.CreateResult("createInputRow : ko"));
+//            throw e;
         }
     }
 
@@ -52,6 +53,7 @@ public class CreateInput {
 
         } catch (Exception e) {
             log.error("Error creating input row connection: ", e);
+//            throw e;
             return Stream.of(new CreateNeuron.CreateResult("createInputsRelationShips : ko"));
         }
     }

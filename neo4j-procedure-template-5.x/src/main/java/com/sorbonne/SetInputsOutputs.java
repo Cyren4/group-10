@@ -38,6 +38,7 @@ public class SetInputsOutputs {
             tx.commit();
         } catch (Exception e) {
             log.error("Error set_inputs : ", e);
+            throw e;
         }
     }
 
@@ -65,6 +66,7 @@ public class SetInputsOutputs {
             tx.commit();
         } catch (Exception e) {
             log.error("Error set_expected_outputs : ", e);
+            throw e;
         }
     }
 

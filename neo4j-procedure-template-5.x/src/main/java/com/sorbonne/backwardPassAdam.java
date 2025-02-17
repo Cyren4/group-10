@@ -54,6 +54,7 @@ public class backwardPassAdam {
             tx.commit();
         } catch (Exception e) {
             log.error("Error backward pass : ", e);
+            throw e;
         }
 
 //        # Step 2: Update hidden layers
@@ -90,6 +91,7 @@ public class backwardPassAdam {
             tx.commit();
         } catch (Exception e) {
             log.error("Error backward pass : ", e);
+            throw e;
         }
     }
 

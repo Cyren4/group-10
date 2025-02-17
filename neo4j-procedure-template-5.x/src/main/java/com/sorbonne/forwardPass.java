@@ -62,6 +62,7 @@ public class forwardPass {
             tx.commit();
         } catch (Exception e) {
             log.error("Error forward pass : ", e);
+            throw e;
         }
     }
 }
