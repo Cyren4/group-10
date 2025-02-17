@@ -1,14 +1,11 @@
+
 package com.sorbonne;
 
 import org.eclipse.jetty.util.Index;
-import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.NotNull;
-import org.neo4j.annotations.Public;
 import org.neo4j.graphdb.*;
 import org.neo4j.logging.Log;
 import org.neo4j.procedure.*;
 
-import java.util.*;
 import java.util.stream.Stream;
 
 
@@ -20,8 +17,65 @@ public class CreateNeuron {
     @Context
     public GraphDatabaseService db;
 
+    // Exemple de base à lire completer corriger
+    // Pour utiliser call nn.createNeuron("123","0","input","sotfmax")
+    @Procedure(name = "nn.createNeuron",mode = Mode.WRITE)
+    @Description("")
+    public Stream<CreateResult> createNeuron(@Name("id") String id,
+                                             @Name("layer") String layer,
+                                             @Name("type") String type,
+                                             @Name("activation_function") String activation_function
+    ) {
+        try (Transaction tx = db.beginTx()) {
 
-//    call nn.createNetwork([3,2,3], "classification", "relu", "sigmoid")
+            tx.execute("CREATE (n:Neuron {\n" +
+                    "id: '" + id + "',\n" +
+                    "layer:" + layer + ",\n" +
+                    "type: '" + type + "',\n" +
+                    "bias: 0.0,\n" +
+                    "output: null,\n" +
+                    "m_bias: 0.0,\n" +
+                    "v_bias: 0.0,\n" +
+                    "activation_function:'" + activation_function + "'\n" +
+                    "})");
+            tx.commit();
+            return Stream.of(new CreateResult("ok"));
+        } catch (Exception e) {
+            return Stream.of(new CreateResult("ko"));
+        }
+    }
+    @Procedure(name = "nn.createRelationShipsNeuron",mode = Mode.WRITE)
+    @Description("")
+    public Stream<CreateResult> createRelationShipsNeuron(
+            @Name("from_id") String from_id,
+            @Name("to_id") String to_id,
+            @Name("weight") String weight
+    ) {
+        try (Transaction tx = db.beginTx()) {
+
+            tx.execute(
+                    "MATCH (n1:Neuron" + "{id:'"+ from_id +"'})\n" +
+                            "MATCH (n2:Neuron" + "{id:'"+ to_id +"'})\n" +
+                            "CREATE (n1)-[:CONNECTED_TO {weight:" + weight + "}]->(n2)"
+            );
+            tx.commit();
+            return Stream.of(new CreateResult("ok"));
+        } catch (Exception e) {
+            return Stream.of(new CreateResult("ko"));
+        }
+    }
+    public static class CreateResult {
+
+        public final String result;
+
+        public CreateResult(String result) {
+            this.result = result;
+        }
+    }
+
+/*
+    ///////////////////////////Extra ///////////////////////////
+    //    call nn.createNetwork([3,2,3], "classification", "relu", "sigmoid")
     @Procedure(name = "nn.createNetwork",mode = Mode.WRITE)
     @Description("")
     public Stream<CreateResult> createNetwork(@Name("network_structure") List<Long> network_structure,
@@ -47,7 +101,6 @@ public class CreateNeuron {
         log.error("Error creating neuron or relationship: ", e);
         return Stream.of(new CreateResult("ko"));
     }
-
         return Stream.of(new CreateResult("ok"));
     }
 
@@ -129,60 +182,6 @@ public class CreateNeuron {
     }
 
 
-    // Pour utiliser call nn.createNeuron("123","0","input","sotfmax")
-//    Create 1 neuron
-    @Procedure(name = "nn.createNeuron",mode = Mode.WRITE)
-    @Description("")
-    public Stream<CreateResult> createNeuron(@Name("id") String id,
-                                       @Name("layer") String layer,
-                                       @Name("type") String type,
-                                       @Name("activation_function") String activation_function
-    ) {
-        try (Transaction tx = db.beginTx()) {
-
-          tx.execute("CREATE (n:Neuron {\n" +
-                    "id: '" + id + "',\n" +
-                    "layer:" + layer + ",\n" +
-                    "type: '" + type + "',\n" +
-                    "bias: 0.0,\n" +
-                    "output: null,\n" +
-                    "m_bias: 0.0,\n" +
-                    "v_bias: 0.0,\n" +
-                    "activation_function:'" + activation_function + "'\n" +
-                    "})");
-            tx.commit();
-            return Stream.of(new CreateResult("ok"));
-
-        } catch (Exception e) {
-
-            return Stream.of(new CreateResult("ko"));
-        }
-    }
-    @Procedure(name = "nn.createRelationShipsNeuron",mode = Mode.WRITE)
-    @Description("")
-    public Stream<CreateResult> createRelationShipsNeuron(
-            @Name("from_id") String from_id,
-            @Name("to_id") String to_id,
-             @Name("weight") String weight
-    ) {
-        try (Transaction tx = db.beginTx()) {
-
-            tx.execute(
-            "MATCH (n1:Neuron" + "{id:'"+ from_id +"'})\n" +
-            "MATCH (n2:Neuron" + "{id:'"+ to_id +"'})\n" +
-            "CREATE (n1)-[:CONNECTED_TO {weight:" + weight + "}]->(n2)"
-            );
-            tx.commit();
-            return Stream.of(new CreateResult("ok"));
-
-        } catch (Exception e) {
-
-            return Stream.of(new CreateResult("ko"));
-        }
-
-
-    }
-
 /////////////////////////// Helper functions ///////////////////////////
 
 
@@ -203,12 +202,7 @@ public class CreateNeuron {
         double upperBound = Math.sqrt(6.0) / Math.sqrt(numNeuronsCurrent + numNeuronsNext);
         return lowerBound + (upperBound - lowerBound) * random.nextDouble();
     }
-    public static class CreateResult {
 
-        public final String result;
-
-        public CreateResult(String result) {
-            this.result = result;
-        }
-    }
+}
+*/
 }

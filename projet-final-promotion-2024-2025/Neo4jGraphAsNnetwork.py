@@ -65,12 +65,13 @@ class NeuralNetworkManager:
                 # Create the neuron in the database with a unique id per row
                 # Exemple de base à lire completer corriger
                 tx.run("""
-                    call nn.createNeuron($id,$type,$layer,$activation_function)
-                """, id=f"{layer_index}-{neuron_index}", layer=layer_index, type=layer_type,
+                    call nn.createNeuron($id, $layer, $type, $activation_function)
+                """, id=f"{layer_index}-{neuron_index}", layer=str(layer_index), type=layer_type,
                        activation_function=activation_function)
 
-                '''tx.run("""
-                    'CREATE (n:Neuron {
+                '''
+                tx.run("""
+                    CREATE (n:Neuron {
                         id: $id,
                         layer: $layer,
                         type: $type,
@@ -81,7 +82,8 @@ class NeuralNetworkManager:
                         activation_function: $activation_function
                     })
                 """, id=f"{layer_index}-{neuron_index}", layer=layer_index, type=layer_type,
-                       activation_function=activation_function)'''
+                       activation_function=activation_function)
+                       '''
 
         # Create connections between layers for the current row
         for layer_index in range(len(network_structure) - 1):
@@ -94,11 +96,18 @@ class NeuralNetworkManager:
                         math.sqrt(6) / math.sqrt(num_neurons_current + num_neurons_next)
                     )
                     tx.run("""
+                        call nn.createRelationShipsNeuron($from_id,$to_id,$weight)
+                        """, from_id=f"{layer_index}-{i}", to_id=f"{layer_index + 1}-{j}",
+                           weight=f"weight")
+
+                    '''
+                    tx.run("""
                         MATCH (n1:Neuron {id: $from_id})
                         MATCH (n2:Neuron {id: $to_id})
                         CREATE (n1)-[:CONNECTED_TO {weight: $weight}]->(n2)
                     """, from_id=f"{layer_index}-{i}", to_id=f"{layer_index + 1}-{j}",
                            weight=weight)
+                           '''
         end_time = time.time()  # Record the end time
         duration = end_time - start_time  # Calculate the duration
         logging.info(f"Finished creating the network structure. Total time taken: {duration:.2f} seconds.")
@@ -107,14 +116,26 @@ class NeuralNetworkManager:
     def create_inputs_row_node(tx, network_structure, batch_size):
         for _index in range(batch_size):
             tx.run("""
+                    call nn.createInputRowNode($id)
+                    """, id=f"{_index}")
+            '''
+            tx.run("""
                 CREATE (n:Row {
                     id: $id,
                     type: 'inputsRow'})
                  """, id=f"{_index}")
+            '''
         layer_index,num_neurons = 0,network_structure[0]
         for row_index in range(batch_size):
             for neuron_index in range(num_neurons):
                 property_name = f"X_{row_index}_{neuron_index}"
+                tx.run("""
+                        call nn.createInputsRelationShips($from_id,$to_id,$input_feature_id, $value)
+                        """, from_id=f"{row_index}",
+                       to_id=f"{layer_index}-{neuron_index}",
+                       input_feature_id=f"{row_index}_{neuron_index}",
+                       value=0)
+                '''
                 query = f"""
                     MATCH (n1:Row {{id: $from_id,type:'inputsRow'}})
                     MATCH (n2:Neuron {{id: $to_id,type:'input'}})
@@ -125,19 +146,33 @@ class NeuralNetworkManager:
                        to_id=f"{layer_index}-{neuron_index}",
                        inputfeatureid=f"{row_index}_{neuron_index}",
                        value=0)
+                '''
     #network_structure[1:-1]
     @staticmethod
     def create_outputs_row_node(tx, network_structure, batch_size):
         for _index in range(batch_size):
             tx.run("""
+                    call nn.createOutputRowNode($id)
+                    """, id=f"{_index}")
+            '''
+            tx.run("""
                    CREATE (n:Row {
                        id: $id,
                        type: 'outputsRow'})
                     """, id=f"{_index}")
+            '''
         layer_index, num_neurons = len(network_structure) - 1, network_structure[len(network_structure) - 1]
         for row_index in range(batch_size):
             for neuron_index in range(num_neurons):
                 property_name = f"Y_{row_index}_{neuron_index}"
+
+                tx.run("""
+                        call nn.createOutputsRelationShips($from_id,$to_id,$output_feature_id, $value)
+                        """, from_id=f"{layer_index}-{neuron_index}",
+                       to_id=f"{row_index}",
+                       output_feature_id=f"{row_index}_{neuron_index}",
+                       value=0)
+                '''
                 query = f"""
                        
                        MATCH (n1:Neuron {{id: $from_id,type:'output'}})
@@ -148,7 +183,7 @@ class NeuralNetworkManager:
                 tx.run(query, from_id=f"{layer_index}-{neuron_index}",
                        to_id=f"{row_index}", outputbyrowid=f"{row_index}_{neuron_index}",
                        value=0)
-
+                '''
 
     @staticmethod
     def forward_pass(tx):
@@ -287,7 +322,7 @@ class NeuralNetworkManager:
                 """)
 
         record = result.single()
-        return record["loss"] if record else 0.0
+        return record["loss"] if record["loss"] else 0.0
 
     @staticmethod
     def initialize_adam_parameters(tx):
@@ -622,8 +657,8 @@ if __name__ == "__main__":
     # Initialize database manager and neural network manager
     uri = "bolt://localhost:7687"
     username = "neo4j"
-    password = ""
-    database = "neuralnetwork"
+    password = "password"
+    database = "neo4j"
 
     db_manager = Neo4jDatabaseManager(uri, username, password, database)
     nn_manager = NeuralNetworkManager(db_manager)
@@ -636,11 +671,11 @@ if __name__ == "__main__":
         output_activation = "tanh"  #Softmax Or "sigmoid" for binary classification
         task_type = "regression" #Regression or classification
 
-        epochs = 500
-        learning_rate = 0.0005
+        epochs = 50 #500
+        learning_rate = 0.05 #0.0005
         beta1 = 0.9
         beta2 = 0.999
-        epsilon = 1e-8
+        epsilon = 1e-8 #1e-8
         batch_size=121
 
         # Generate 1000 test cases
