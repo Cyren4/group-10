@@ -419,14 +419,20 @@ class NeuralNetworkManager:
             normalized_inputs = self.normalized(raw_inputs)
             for i, value in enumerate(normalized_inputs):
                 property_name = f"X_{row_index}_{i}"
+
                 query = f"""
                 MATCH (row:Row {{type:'inputsRow', id: $rowid}})-[r:CONTAINS {{ id: $inputfeatureid}}]->(inputs:Neuron {{type:'input', id: $inputneuronid}})
                 SET r.output = $value
                 """
                 tx.run(query, rowid=f"{row_index}",inputfeatureid=f"{row_index}_{i}",
                        inputneuronid=f"0-{i}", value=value)
-                #Old version
-                '''tx.run("""
+
+    ''' tx.run(""" 
+                            call nn.set_inputs($rowid, $inputfeatureid, $inputneuronid, $value)
+                        """, rowid=f"{row_index}",inputfeatureid=f"{row_index}_{i}",
+                               inputneuronid=f"0-{i}", value=value)'''
+    #Old version
+    '''tx.run("""
                             MATCH (n:Neuron {layer: 0, id: $id})
                             SET n.output = $value
                         """, id=f"{row_index}-0-{i}", value=value)'''
@@ -437,12 +443,18 @@ class NeuralNetworkManager:
             expected_outputs = row["expected_outputs"]
             for i, value in expected_outputs.items():
                 property_name = f"expected_output_{row_index}_0"
+                '''tx.run(""" 
+                        call nn.set_expected_outputs($rowid, $predictedoutputid, $outputneuronid, $value)
+                        """, rowid=f"{row_index}", predictedoutputid=f"{row_index}_0",
+                       outputneuronid=f"{output_layer_index}-0", value=value)'''
+
                 query = f"""
                                MATCH(:Neuron {{type:'output', id: $outputneuronid}})-[r:CONTAINS {{ id: $predictedoutputid}}]->(row:Row {{type:'outputsRow', id: $rowid}})
                                SET r.expected_output = $value
                                """
                 tx.run(query, rowid=f"{row_index}", predictedoutputid=f"{row_index}_0",
                        outputneuronid=f"{output_layer_index}-0", value=value)
+                # old version
                 '''tx.run("""
                             MATCH (n:Neuron {id: $id})
                             SET n.expected_output = $value
