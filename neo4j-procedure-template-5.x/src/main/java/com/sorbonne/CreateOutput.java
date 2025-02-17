@@ -35,17 +35,17 @@ public class CreateOutput {
 
     @Procedure(name = "nn.createOutputsRelationShips",mode = Mode.WRITE)
     @Description("")
-    public Stream<CreateNeuron.CreateResult> createInputsRelationShips(@Name("from_id") String from_id,
+    public Stream<CreateNeuron.CreateResult> createOutputsRelationShips(@Name("from_id") String from_id,
                                                                        @Name("to_id") String to_id,
                                                                        @Name("output_feature_id") String output_feature_id,
-                                                                       @Name("value") long value
+                                                                       @Name("value") String value
     ) {
         try (Transaction tx = db.beginTx()) {
 
             tx.execute(
                     "MATCH (n1:Neuron {id:'"+ from_id +"',type:'output'})\n" +
                             "MATCH (n2:Row {id:'"+ to_id +"',type:'outputsRow'})\n" +
-                            "CREATE (n1)-[:CONTAINS {output:'" + value + "',id:'"+ output_feature_id +"'}]->(n2)"
+                            "CREATE (n1)-[:CONTAINS {output:'" + Double.parseDouble(value) + "',id:'"+ output_feature_id +"'}]->(n2)"
             );
             tx.commit();
             return Stream.of(new CreateNeuron.CreateResult("createOutputsRelationShips: ok"));

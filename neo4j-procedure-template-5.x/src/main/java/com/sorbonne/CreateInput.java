@@ -38,14 +38,14 @@ public class CreateInput {
     public Stream<CreateNeuron.CreateResult> createInputsRelationShips(@Name("from_id") String from_id,
                                                                        @Name("to_id") String to_id,
                                                                        @Name("input_feature_id") String input_feature_id,
-                                                                       @Name("value") long value
+                                                                       @Name("value") String value
     ) {
         try (Transaction tx = db.beginTx()) {
 
             tx.execute(
                  "MATCH (n1:Row {id:'"+ from_id +"',type:'inputsRow'})\n" +
                     "MATCH (n2:Neuron {id:'"+ to_id +"',type:'input'})\n" +
-                    "CREATE (n1)-[:CONTAINS {output:" + value + ",id:'"+ input_feature_id +"'}]->(n2)"
+                    "CREATE (n1)-[:CONTAINS {output:" + Double.parseDouble(value) + ",id:'"+ input_feature_id +"'}]->(n2)"
             );
             tx.commit();
             return Stream.of(new CreateNeuron.CreateResult("createInputsRelationShips: ok"));

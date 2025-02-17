@@ -19,7 +19,7 @@ public class SetInputsOutputs {
     public void set_inputs(@Name("row_id") String row_id,
                            @Name("input_feature_id") String input_feature_id,
                            @Name("input_neuron_id") String input_neuron_id,
-                           @Name("value") long value
+                           @Name("value") String value
     ) {
         Transaction tx = db.beginTx();
         try {
@@ -33,7 +33,7 @@ public class SetInputsOutputs {
                     "rowId", row_id,
                     "input_feature_id", input_feature_id,
                     "inputNeuronId", input_neuron_id,
-                    "value", value
+                    "value", Double.parseDouble(value)
             ));
             tx.commit();
         } catch (Exception e) {
@@ -46,12 +46,12 @@ public class SetInputsOutputs {
     public void set_expected_outputs(@Name("row_id") String row_id,
                            @Name("predicted_output_id") String predicted_output_id,
                            @Name("output_neuron_id") String output_neuron_id,
-                           @Name("value") long value
+                           @Name("value") String value
     ) {
         Transaction tx = db.beginTx();
         try {
             String query = """
-                    MATCH(:Neuron {{type:'output', id: '$outputneuronid'}})-[r:CONTAINS {{ id: '$predictedoutputid'}}]->(row:Row {{type:'outputsRow', id: '$rowid'}})
+                    MATCH(:Neuron {type:'output', id: '$outputneuronid'})-[r:CONTAINS { id: '$predictedoutputid'}]->(row:Row {type:'outputsRow', id: '$rowid'})
                     SET r.expected_output = $value
                 """;
 
@@ -60,7 +60,7 @@ public class SetInputsOutputs {
                     "rowid", row_id,
                     "predictedoutputid", predicted_output_id,
                     "outputneuronid", output_neuron_id,
-                    "value", value
+                    "value", Double.parseDouble(value)
             ));
             tx.commit();
         } catch (Exception e) {
