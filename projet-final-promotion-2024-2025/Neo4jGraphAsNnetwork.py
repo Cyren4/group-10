@@ -419,18 +419,18 @@ class NeuralNetworkManager:
             normalized_inputs = self.normalized(raw_inputs)
             for i, value in enumerate(normalized_inputs):
                 property_name = f"X_{row_index}_{i}"
-
-                query = f"""
-                MATCH (row:Row {{type:'inputsRow', id: $rowid}})-[r:CONTAINS {{ id: $inputfeatureid}}]->(inputs:Neuron {{type:'input', id: $inputneuronid}})
-                SET r.output = $value
-                """
-                tx.run(query, rowid=f"{row_index}",inputfeatureid=f"{row_index}_{i}",
-                       inputneuronid=f"0-{i}", value=value)
-
-    ''' tx.run(""" 
+    # '''
+                tx.run(""" 
                             call nn.set_inputs($rowid, $inputfeatureid, $inputneuronid, $value)
                         """, rowid=f"{row_index}",inputfeatureid=f"{row_index}_{i}",
-                               inputneuronid=f"0-{i}", value=value)'''
+                               inputneuronid=f"0-{i}", value=value)
+                               # '''
+                '''query = f"""
+                                MATCH (row:Row {{type:'inputsRow', id: $rowid}})-[r:CONTAINS {{ id: $inputfeatureid}}]->(inputs:Neuron {{type:'input', id: $inputneuronid}})
+                                SET r.output = $value
+                                """
+                                tx.run(query, rowid=f"{row_index}",inputfeatureid=f"{row_index}_{i}",
+                                       inputneuronid=f"0-{i}", value=value)'''
     #Old version
     '''tx.run("""
                             MATCH (n:Neuron {layer: 0, id: $id})

@@ -24,7 +24,7 @@ public class SetInputsOutputs {
         Transaction tx = db.beginTx();
         try {
             String query = """
-                    MATCH (row:Row {type: 'inputsRow', id: $rowId})-[r:CONTAINS {id: $inputFeatureId}]->(inputs:Neuron {type: 'input', id: $inputNeuronId})
+                    MATCH (row:Row {type: 'inputsRow', id: '$rowId'})-[r:CONTAINS {id: '$inputFeatureId'}]->(inputs:Neuron {type: 'input', id: '$inputNeuronId'})
                     SET r.output = $value
                 """;
 
@@ -51,7 +51,7 @@ public class SetInputsOutputs {
         Transaction tx = db.beginTx();
         try {
             String query = """
-                    MATCH(:Neuron {{type:'output', id: $outputneuronid}})-[r:CONTAINS {{ id: $predictedoutputid}}]->(row:Row {{type:'outputsRow', id: $rowid}})
+                    MATCH(:Neuron {{type:'output', id: '$outputneuronid'}})-[r:CONTAINS {{ id: '$predictedoutputid'}}]->(row:Row {{type:'outputsRow', id: '$rowid'}})
                     SET r.expected_output = $value
                 """;
 
@@ -64,7 +64,7 @@ public class SetInputsOutputs {
             ));
             tx.commit();
         } catch (Exception e) {
-            log.error("Error set_inputs : ", e);
+            log.error("Error set_expected_outputs : ", e);
         }
     }
 
