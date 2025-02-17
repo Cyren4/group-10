@@ -371,10 +371,13 @@ class NeuralNetworkManager:
 
     @staticmethod
     def evaluate_model(tx):
+        result = tx.run('''call nn.evaluate_model()''')
+        '''
         result = tx.run("""
             MATCH (n:Neuron {type: 'output'})
             RETURN n.id AS id, n.output AS predicted
         """)
+        '''
         return {record["id"]: record["predicted"] for record in result}
 
     @staticmethod

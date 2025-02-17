@@ -19,9 +19,8 @@ public class backwardPassAdam {
                                                     @Name("beta2") String beta2,
                                                     @Name("epsilon") String epsilon,
                                                     @Name("t") String t) {
-        Transaction tx = db.beginTx();
-
         try  {
+            Transaction tx = db.beginTx();
 //            # Step 1: Update output layer
             tx.execute("""
                     MATCH (output:Neuron {type: 'output'})<-[r:CONNECTED_TO]-(prev:Neuron)
@@ -59,6 +58,8 @@ public class backwardPassAdam {
 
 //        # Step 2: Update hidden layers
         try {
+            Transaction tx = db.beginTx();
+
             tx.execute("""
                     MATCH (n:Neuron {type: 'hidden'})<-[:CONNECTED_TO]-(next:Neuron)
                            WITH n, next, $t AS t
