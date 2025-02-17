@@ -196,6 +196,11 @@ class NeuralNetworkManager:
             (output:Neuron {type: 'output'})-[outputsValues_R:CONTAINS]->
             (row_for_outputs:Row {type:'outputsRow'})'''
         tx.run("""
+                call nn.forward_pass()
+                """)
+
+        '''
+        tx.run("""
         
             MATCH (row_for_inputs:Row {type: 'inputsRow'})-[inputsValue_R:CONTAINS]->(input:Neuron {type: 'input'})
             MATCH (input)-[r1:CONNECTED_TO]->(hidden:Neuron {type: 'hidden'})
@@ -237,6 +242,7 @@ class NeuralNetworkManager:
                     END AS adjusted_output
                SET outputRow.output = adjusted_output
         """)
+        '''
 
 
 
@@ -244,6 +250,10 @@ class NeuralNetworkManager:
     @staticmethod
     def backward_pass_adam(tx, learning_rate, beta1, beta2, epsilon, t):
         # Step 1: Update output layer
+        tx.run("""
+                call nn.backward_pass_adam($learning_rate, $beta1, $beta2, $epsilon, $t)
+                """, learning_rate=str(learning_rate), beta1=str(beta1), beta2=str(beta2), epsilon=str(epsilon), t=str(t))
+        '''
         tx.run("""
             MATCH (output:Neuron {type: 'output'})<-[r:CONNECTED_TO]-(prev:Neuron)
             MATCH (output)-[outputsValues_R:CONTAINS]->(row_for_outputs:Row {type: 'outputsRow'})
@@ -266,8 +276,10 @@ class NeuralNetworkManager:
                          (SQRT(output.v_bias / (1 - ($beta2 ^ t))) + $epsilon)
             SET output.gradient = gradient
         """, learning_rate=learning_rate, beta1=beta1, beta2=beta2, epsilon=epsilon, t=t)
+        '''
 
         # Step 2: Update hidden layers
+        '''
         tx.run("""
             MATCH (n:Neuron {type: 'hidden'})<-[:CONNECTED_TO]-(next:Neuron)
             WITH n, next, $t AS t
@@ -291,6 +303,7 @@ class NeuralNetworkManager:
                          (SQRT(n.v_bias / (1 - ($beta2 ^ t))) + $epsilon)
             SET n.gradient = gradient
         """, learning_rate=learning_rate, beta1=beta1, beta2=beta2, epsilon=epsilon, t=t)
+        '''
 
     @staticmethod
     def compute_loss(tx, task_type):
@@ -303,8 +316,8 @@ class NeuralNetworkManager:
                     MATCH (output:Neuron {type: 'output'})
                     MATCH (output)-[outputsValues_R:CONTAINS]->(row_for_outputs:Row {type: 'outputsRow'})
                     WITH outputsValues_R,
-                         COALESCE(outputsValues_R.output, 0) AS predicted,
-                         COALESCE(outputsValues_R.expected_output, 0) AS actual,
+                         toFloat(COALESCE(outputsValues_R.output, 0)) AS predicted,
+                         toFloat(COALESCE(outputsValues_R.expected_output, 0)) AS actual,
                          1e-10 AS epsilon
                     RETURN SUM(
                         -actual * LOG(predicted + epsilon) - (1 - actual) * LOG(1 - predicted + epsilon)
@@ -316,13 +329,13 @@ class NeuralNetworkManager:
                     MATCH (output:Neuron {type: 'output'})
                     MATCH (output)-[outputsValues_R:CONTAINS]->(row_for_outputs:Row {type: 'outputsRow'})
                     WITH outputsValues_R,
-                         COALESCE(outputsValues_R.output, 0) AS predicted,
-                         COALESCE(outputsValues_R.expected_output, 0) AS actual
+                         toFloat(COALESCE(outputsValues_R.output, 0)) AS predicted,
+                         toFloat(COALESCE(outputsValues_R.expected_output, 0)) AS actual
                     RETURN AVG((predicted - actual)^2) AS loss
                 """)
 
         record = result.single()
-        return record["loss"] if record["loss"] else 0.0
+        return record["loss"] if record else 0.0
 
     @staticmethod
     def initialize_adam_parameters(tx):
@@ -655,7 +668,7 @@ def split_data(data, train_ratio=0.9, test_ratio=0.05, val_ratio=0.05):
 
 if __name__ == "__main__":
     # Initialize database manager and neural network manager
-    uri = "bolt://localhost:7687"
+    uri = "bolt://localhost:7688"
     username = "neo4j"
     password = "password"
     database = "neo4j"
@@ -666,12 +679,13 @@ if __name__ == "__main__":
     try:
         # Training Parameters
 
-        network_structure = [108, 10, 1]
+        # network_structure = [108, 10, 1]
+        network_structure = [10, 6, 2]
         hidden_activation = "tanh" # tanh,relu
         output_activation = "tanh"  #Softmax Or "sigmoid" for binary classification
         task_type = "regression" #Regression or classification
 
-        epochs = 50 #500
+        epochs = 10 #500
         learning_rate = 0.05 #0.0005
         beta1 = 0.9
         beta2 = 0.999
